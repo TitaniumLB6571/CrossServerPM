@@ -205,7 +205,7 @@ you know the folder is a reliable shared mount.
 - `/xmsg status` - Show transport, network, and readiness status.
 - `/xmsg servers` - List connected servers and configured servers that are not connected.
 - `/xmsg reload` - Reload config.
-- `/xmsg key generate` - Generate a shared network secret.
+- `/xmsg key generate` - Generate a shared network secret. (this gets put in your config automatically when running the commmand)
 
 ## Server list command
 
