@@ -27,6 +27,7 @@ use NorixDevelopment\CrossServerPM\service\RemotePlayerDirectory;
 use NorixDevelopment\CrossServerPM\service\RemoteServer;
 use NorixDevelopment\CrossServerPM\service\ReplyRegistry;
 use NorixDevelopment\CrossServerPM\task\NetworkTickTask;
+use NorixDevelopment\CrossServerPM\updater\PoggitUpdateCheckTask;
 use NorixDevelopment\CrossServerPM\util\RandomSecret;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
@@ -61,12 +62,23 @@ final class CrossServerPM extends PluginBase{
 	private bool $presenceDirty = true;
 	private int $nextHeartbeatAt = 0;
 	private int $nextPollAt = 0;
+	private bool $updateCheckRunning = false;
+	private int $nextUpdateCheckAt = 0;
 
 	/** @var array<string, float> */
 	private array $lastMessageAt = [];
 
 	/** @var array<string, Player> */
 	private array $localPlayers = [];
+
+	/** @var array<string, bool> */
+	private array $pendingUpdateCheckRequesters = [];
+
+	/** @var array<string, mixed>|null */
+	private ?array $latestUpdate = null;
+
+	/** @var array<string, bool> */
+	private array $notifiedUpdatePlayers = [];
 
 	protected function onEnable() : void{
 		$this->saveDefaultConfig();
@@ -78,6 +90,7 @@ final class CrossServerPM extends PluginBase{
 		$this->getServer()->getPluginManager()->registerEvents(new PresenceListener($this), $this);
 		$this->networkTask = $this->getScheduler()->scheduleRepeatingTask(new NetworkTickTask($this), 20);
 		$this->initializeTransport();
+		$this->submitUpdateCheck(false);
 	}
 
 	protected function onDisable() : void{
@@ -116,6 +129,7 @@ final class CrossServerPM extends PluginBase{
 	public function registerLocalPlayer(Player $player) : void{
 		$this->localPlayers[strtolower($player->getName())] = $player;
 		$this->markPresenceDirty();
+		$this->notifyPlayerAboutStoredUpdate($player);
 	}
 
 	public function unregisterLocalPlayer(Player $player) : void{
@@ -215,6 +229,69 @@ final class CrossServerPM extends PluginBase{
 		}
 	}
 
+	public function tickUpdater() : void{
+		if(!($this->settings->updater["enabled"] ?? false) || $this->updateCheckRunning){
+			return;
+		}
+		if(time() >= $this->nextUpdateCheckAt){
+			$this->submitUpdateCheck(false);
+		}
+	}
+
+	public function handleUpdateCheckResult(array $result) : void{
+		$this->updateCheckRunning = false;
+		$this->nextUpdateCheckAt = time() + ((int) ($this->settings->updater["check-interval-hours"] ?? 12) * 3600);
+
+		$requesters = array_keys($this->pendingUpdateCheckRequesters);
+		$this->pendingUpdateCheckRequesters = [];
+
+		if(!($result["ok"] ?? false)){
+			$this->latestUpdate = null;
+			$message = $this->formatter->message("update-check-failed", ["reason" => (string) ($result["error"] ?? "unknown error")]);
+			foreach($requesters as $requester){
+				$this->sendUpdateRequesterMessage($requester, $message);
+			}
+			if($requesters === [] && ($this->settings->updater["notify-console"] ?? true)){
+				$this->getLogger()->warning(TextFormat::clean($message));
+			}
+			return;
+		}
+
+		if($result["update_available"] ?? false){
+			$this->latestUpdate = $result;
+			$this->notifiedUpdatePlayers = [];
+			$message = $this->updateAvailableMessage($result);
+			foreach($requesters as $requester){
+				$this->sendUpdateRequesterMessage($requester, $message);
+			}
+			if($requesters === []){
+				$this->notifyUpdateAvailable($result);
+			}
+			return;
+		}
+
+		$this->latestUpdate = null;
+		if(!($result["release_found"] ?? true)){
+			$message = $this->formatter->message("update-no-release", [
+				"reason" => (string) ($result["message"] ?? "No compatible Poggit release was found."),
+			]);
+			foreach($requesters as $requester){
+				$this->sendUpdateRequesterMessage($requester, $message);
+			}
+			if($requesters === [] && ($this->settings->updater["notify-console"] ?? true)){
+				$this->getLogger()->info(TextFormat::clean($message));
+			}
+			return;
+		}
+
+		$message = $this->formatter->message("update-none", [
+			"version" => (string) ($result["current_version"] ?? $this->currentPluginVersion()),
+		]);
+		foreach($requesters as $requester){
+			$this->sendUpdateRequesterMessage($requester, $message);
+		}
+	}
+
 	private function handleMessageCommand(CommandSender $sender, array $args) : bool{
 		if(!$this->canUseMessaging($sender)){
 			return true;
@@ -257,6 +334,7 @@ final class CrossServerPM extends PluginBase{
 		match($subcommand){
 			"status" => $this->sendStatus($sender),
 			"servers" => $this->sendServers($sender),
+			"update" => $this->handleUpdateCommand($sender),
 			"reload" => $this->handleReload($sender),
 			"key" => $this->handleKeyCommand($sender, $args),
 			default => $this->sendAdminHelp($sender),
@@ -604,6 +682,13 @@ final class CrossServerPM extends PluginBase{
 		$sender->sendMessage($this->formatter->message("reload-complete"));
 	}
 
+	private function handleUpdateCommand(CommandSender $sender) : void{
+		$requester = $this->updateRequesterKey($sender);
+		$this->pendingUpdateCheckRequesters[$requester] = true;
+		$sender->sendMessage($this->formatter->message("update-check-started"));
+		$this->submitUpdateCheck(true);
+	}
+
 	private function handleKeyCommand(CommandSender $sender, array $args) : void{
 		if(strtolower((string) ($args[0] ?? "")) !== "generate"){
 			$sender->sendMessage(TextFormat::YELLOW . "Usage: /xmsg key generate");
@@ -678,8 +763,104 @@ final class CrossServerPM extends PluginBase{
 		$sender->sendMessage(TextFormat::GOLD . "CrossServerPM commands");
 		$sender->sendMessage(TextFormat::GRAY . "/xmsg status " . TextFormat::WHITE . "Show transport status.");
 		$sender->sendMessage(TextFormat::GRAY . "/xmsg servers " . TextFormat::WHITE . "List connected and configured offline servers.");
+		$sender->sendMessage(TextFormat::GRAY . "/xmsg update " . TextFormat::WHITE . "Check Poggit for plugin updates.");
 		$sender->sendMessage(TextFormat::GRAY . "/xmsg reload " . TextFormat::WHITE . "Reload config.");
 		$sender->sendMessage(TextFormat::GRAY . "/xmsg key generate " . TextFormat::WHITE . "Create a shared network secret.");
+	}
+
+	private function submitUpdateCheck(bool $manual) : void{
+		if(!$manual && !($this->settings->updater["enabled"] ?? false)){
+			return;
+		}
+		if($this->updateCheckRunning){
+			return;
+		}
+
+		$this->updateCheckRunning = true;
+		$this->getServer()->getAsyncPool()->submitTask(new PoggitUpdateCheckTask(
+			$this,
+			$this->settings->updater,
+			$this->currentPluginVersion(),
+			$this->getServer()->getApiVersion()
+		));
+	}
+
+	private function currentPluginVersion() : string{
+		$configVersion = trim((string) ($this->settings->updater["current-version"] ?? ""));
+		return $configVersion === "" ? $this->getDescription()->getVersion() : $configVersion;
+	}
+
+	private function updateRequesterKey(CommandSender $sender) : string{
+		return $sender instanceof Player ? "player:" . strtolower($sender->getName()) : "console";
+	}
+
+	private function sendUpdateRequesterMessage(string $requester, string $message) : void{
+		if($requester === "console"){
+			$this->getLogger()->info(TextFormat::clean($message));
+			return;
+		}
+
+		$playerName = substr($requester, strlen("player:"));
+		$player = $this->findLocalPlayerByKey($playerName);
+		if($player instanceof Player){
+			$player->sendMessage($message);
+		}
+	}
+
+	/**
+	 * @param array<string, mixed> $update
+	 */
+	private function notifyUpdateAvailable(array $update) : void{
+		$message = $this->updateAvailableMessage($update);
+		if($this->settings->updater["notify-console"] ?? true){
+			$this->getLogger()->warning(TextFormat::clean($message));
+		}
+		if(!($this->settings->updater["notify-ops"] ?? true)){
+			return;
+		}
+		foreach($this->localPlayers as $player){
+			$this->notifyPlayerAboutStoredUpdate($player);
+		}
+	}
+
+	private function notifyPlayerAboutStoredUpdate(Player $player) : void{
+		if($this->latestUpdate === null || !($this->settings->updater["notify-ops"] ?? true) || !$player->hasPermission("crossserverpm.admin")){
+			return;
+		}
+
+		$key = strtolower($player->getName());
+		if($this->notifiedUpdatePlayers[$key] ?? false){
+			return;
+		}
+
+		$this->notifiedUpdatePlayers[$key] = true;
+		$player->sendMessage($this->updateAvailableMessage($this->latestUpdate));
+	}
+
+	/**
+	 * @param array<string, mixed> $update
+	 */
+	private function updateAvailableMessage(array $update) : string{
+		return $this->formatter->message("update-available", [
+			"current" => (string) ($update["current_version"] ?? $this->currentPluginVersion()),
+			"latest" => (string) ($update["latest_version"] ?? "unknown"),
+			"url" => $this->updateUrl($update),
+		]);
+	}
+
+	/**
+	 * @param array<string, mixed> $update
+	 */
+	private function updateUrl(array $update) : string{
+		$releaseUrl = (string) ($update["release_url"] ?? "");
+		if($releaseUrl !== ""){
+			return $releaseUrl;
+		}
+		$downloadUrl = (string) ($update["download_url"] ?? "");
+		if($downloadUrl !== ""){
+			return $downloadUrl;
+		}
+		return "https://poggit.pmmp.io/p/" . (string) ($this->settings->updater["plugin-name"] ?? "CrossServerPM");
 	}
 
 	private function canUseMessaging(CommandSender $sender) : bool{

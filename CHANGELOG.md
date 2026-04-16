@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0
+
+- Added Poggit update checks.
+- Added `/xmsg update`.
+- Added configurable update notifications for console and admins.
+- Added update checker settings to all example configs.
+
 ## 0.1.0
 
 - Initial public release.

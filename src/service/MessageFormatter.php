@@ -25,6 +25,11 @@ final class MessageFormatter{
 		"cooldown" => "{prefix} §cPlease wait before sending another message.",
 		"send-failed" => "{prefix} §cMessage failed: {reason}",
 		"reload-complete" => "{prefix} §aConfiguration reloaded.",
+		"update-check-started" => "{prefix} §7Checking Poggit for updates...",
+		"update-available" => "{prefix} §eUpdate available: §f{current} §7-> §a{latest}§7. Download: §b{url}",
+		"update-none" => "{prefix} §aCrossServerPM is up to date. Current version: §f{version}",
+		"update-no-release" => "{prefix} §eNo compatible Poggit release was found yet. {reason}",
+		"update-check-failed" => "{prefix} §cUpdate check failed: {reason}",
 	];
 
 	/**

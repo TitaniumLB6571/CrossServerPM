@@ -60,6 +60,20 @@ file:
   # All linked servers must be able to read/write this same folder.
   path: "/home/minecraft/shared-crossserverpm"
 
+updater:
+  enabled: true
+  plugin-name: "CrossServerPM"
+  # Leave empty to use plugin.yml version. Only set this for custom builds.
+  current-version: ""
+  notify-console: true
+  notify-ops: true
+  check-interval-hours: 12
+  include-prereleases: false
+  timeout-seconds: 5
+  # Set true only if your PHP has CA certificates configured.
+  verify-tls: false
+  api-url: "https://poggit.pmmp.io/releases.json"
+
 runtime:
   poll-interval-seconds: 1
   heartbeat-interval-seconds: 5
@@ -87,3 +101,8 @@ messages:
   cooldown: "{prefix} §cPlease wait before sending another message."
   send-failed: "{prefix} §cMessage failed: {reason}"
   reload-complete: "{prefix} §aConfiguration reloaded."
+  update-check-started: "{prefix} §7Checking Poggit for updates..."
+  update-available: "{prefix} §eUpdate available: §f{current} §7-> §a{latest}§7. Download: §b{url}"
+  update-none: "{prefix} §aCrossServerPM is up to date. Current version: §f{version}"
+  update-no-release: "{prefix} §eNo compatible Poggit release was found yet. {reason}"
+  update-check-failed: "{prefix} §cUpdate check failed: {reason}"

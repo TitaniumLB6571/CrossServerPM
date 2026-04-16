@@ -47,7 +47,7 @@ The formats are configurable in `config.yml`.
 
 - PocketMine-MP API 5.
 - PHP `pdo_mysql` extension for `transport: mysql`.
-- PHP `curl` extension for `transport: relay`.
+- PHP `curl` extension for `transport: relay` and Poggit update checks.
 - Redis/Valkey server access for `transport: redis`. The PHP Redis extension is not required.
 - A shared folder available to every linked server for `transport: file`.
 - Node.js 18 or newer only if you run the optional reference relay app from this source repository.
@@ -204,6 +204,7 @@ you know the folder is a reliable shared mount.
 - Console can use `/msg` and `/reply` when `runtime.allow-console-messaging` is `true`.
 - `/xmsg status` - Show transport, network, and readiness status.
 - `/xmsg servers` - List connected servers and configured servers that are not connected.
+- `/xmsg update` - Check Poggit for a newer CrossServerPM release.
 - `/xmsg reload` - Reload config.
 - `/xmsg key generate` - Generate a shared network secret. (this gets put in your config automatically when running the commmand)
 
@@ -226,6 +227,32 @@ network:
 If `skyblock` is not sending heartbeats, `/xmsg servers` will show it as
 `NOT CONNECTED`.
 
+## Poggit update checks
+
+CrossServerPM can check Poggit for newer approved releases. This only notifies
+console and admins; it does not download or replace files automatically.
+
+```yaml
+updater:
+  enabled: true
+  plugin-name: "CrossServerPM"
+  current-version: ""
+  notify-console: true
+  notify-ops: true
+  check-interval-hours: 12
+  include-prereleases: false
+  verify-tls: false
+```
+
+Leave `updater.current-version` empty unless you are running a custom build.
+When it is empty, CrossServerPM uses the version in `plugin.yml`.
+
+`verify-tls` is disabled by default because many bundled PocketMine PHP builds on
+Windows do not ship with a configured CA bundle. The updater only reads public
+Poggit metadata and does not auto-install files.
+
+Admins can force a check with `/xmsg update`.
+
 ## Implemented Features
 
 - [x] Cross-server `/msg`.
@@ -244,6 +271,7 @@ If `skyblock` is not sending heartbeats, `/xmsg servers` will show it as
 - [x] Optional console `/msg` and `/reply`.
 - [x] Admin status command.
 - [x] Connected/offline server list command.
+- [x] Poggit update notifications with `/xmsg update`.
 
 ## Future Features
 
@@ -265,7 +293,7 @@ If `skyblock` is not sending heartbeats, `/xmsg servers` will show it as
 
 - `crossserverpm.msg` - Use `/msg`, `/tell`, `/w`, `/reply`, and `/r`.
 - `crossserverpm.admin` - Use `/xmsg status`, `/xmsg servers`,
-  `/xmsg reload`, and `/xmsg key generate`.
+  `/xmsg update`, `/xmsg reload`, and `/xmsg key generate`.
 
 ## Notes
 

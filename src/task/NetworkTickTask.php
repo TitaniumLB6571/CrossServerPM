@@ -13,6 +13,7 @@ final class NetworkTickTask extends Task{
 	){}
 
 	public function onRun() : void{
+		$this->plugin->tickUpdater();
 		$this->plugin->tickNetwork();
 	}
 }

@@ -20,6 +20,7 @@ final class PluginSettings{
 	 * @param array<string, mixed> $relay
 	 * @param array<string, mixed> $redis
 	 * @param array<string, mixed> $file
+	 * @param array<string, mixed> $updater
 	 * @param array<string, string> $knownServers
 	 * @param array<string, string> $messages
 	 */
@@ -35,6 +36,7 @@ final class PluginSettings{
 		public readonly array $relay,
 		public readonly array $redis,
 		public readonly array $file,
+		public readonly array $updater,
 		public readonly array $knownServers,
 		public readonly int $pollIntervalSeconds,
 		public readonly int $heartbeatIntervalSeconds,
@@ -86,6 +88,18 @@ final class PluginSettings{
 		$file = [
 			"path" => self::string($config->getNested("file.path", "crossserverpm-shared"), "crossserverpm-shared"),
 		];
+		$updater = [
+			"enabled" => self::bool($config->getNested("updater.enabled", true)),
+			"plugin-name" => self::string($config->getNested("updater.plugin-name", "CrossServerPM"), "CrossServerPM"),
+			"current-version" => self::string($config->getNested("updater.current-version", ""), ""),
+			"notify-console" => self::bool($config->getNested("updater.notify-console", true)),
+			"notify-ops" => self::bool($config->getNested("updater.notify-ops", true)),
+			"check-interval-hours" => max(1, self::int($config->getNested("updater.check-interval-hours", 12), 12)),
+			"include-prereleases" => self::bool($config->getNested("updater.include-prereleases", false)),
+			"timeout-seconds" => max(1, self::int($config->getNested("updater.timeout-seconds", 5), 5)),
+			"verify-tls" => self::bool($config->getNested("updater.verify-tls", false)),
+			"api-url" => self::string($config->getNested("updater.api-url", "https://poggit.pmmp.io/releases.json"), "https://poggit.pmmp.io/releases.json"),
+		];
 
 		$messages = [];
 		$configMessages = $config->get("messages", []);
@@ -109,6 +123,7 @@ final class PluginSettings{
 			$relay,
 			$redis,
 			$file,
+			$updater,
 			$knownServers,
 			max(1, self::int($config->getNested("runtime.poll-interval-seconds", 1), 1)),
 			max(1, self::int($config->getNested("runtime.heartbeat-interval-seconds", 5), 5)),
