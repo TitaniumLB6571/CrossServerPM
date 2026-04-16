@@ -5,6 +5,7 @@ api:
   - 5.0.0
 authors:
   - NorixDevelopment
+  - TitaniumLB
 description: Cross-server private messaging for PocketMine-MP networks.
 license: MIT
 src-namespace-prefix: NorixDevelopment\CrossServerPM
