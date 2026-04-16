@@ -1,0 +1,91 @@
+# CrossServerPM needs one shared place where linked servers can meet.
+# Options:
+# - mysql: no separate relay app; every server uses the same MySQL/MariaDB database.
+# - relay: a hosted or self-hosted HTTP relay URL.
+# - redis: every server uses the same Redis/Valkey instance.
+# - file: every server uses the same shared folder. Best for same-machine setups.
+# See resources/example-config.yml for a filled-out fake setup.
+
+enabled: false
+transport: mysql # mysql, relay, redis, or file
+
+network:
+  # Use the same id and secret on every server that should be linked together.
+  id: "my-network"
+  # Run /xmsg key generate on one server, then copy the generated value here
+  # on every server in the same network.
+  secret: ""
+  # Optional. /xmsg servers uses this list to show servers that are not connected.
+  # Keep this list the same on every linked server.
+  # Example:
+  # servers:
+  #   survival: "Titan Survival"
+  #   skyblock: "Titan Skyblock"
+  servers: {}
+
+server:
+  # Must be unique per linked server.
+  id: "survival"
+  # Displayed in message prefixes, for example: [Titan Server] Player -> Me.
+  display-name: "Titan Server"
+
+mysql:
+  host: "127.0.0.1"
+  port: 3306
+  database: "crossserverpm"
+  username: "root"
+  password: ""
+  table-prefix: "cspm_"
+  timeout-seconds: 3
+
+relay:
+  # Example: "https://relay.example.com"
+  # This is not your normal Minecraft address unless a relay service is hosted there.
+  url: ""
+  # Optional. If your relay sets RELAY_ACCESS_KEY, put the same value here.
+  access-key: ""
+  timeout-seconds: 3
+
+redis:
+  host: "127.0.0.1"
+  port: 6379
+  username: ""
+  password: ""
+  database: 0
+  key-prefix: "cspm"
+  timeout-seconds: 3
+
+file:
+  # Must be the same shared folder path on every linked server.
+  # This is usually only practical for servers on the same machine or mounted drive.
+  path: "crossserverpm-shared"
+
+runtime:
+  poll-interval-seconds: 1
+  heartbeat-interval-seconds: 5
+  stale-presence-seconds: 15
+  message-ttl-seconds: 30
+  max-message-length: 256
+  command-cooldown-seconds: 1
+  # When true, server console can use /msg and /reply.
+  allow-console-messaging: false
+  # This name is shown to players when console sends a message.
+  console-name: "Console"
+
+messages:
+  prefix: "§1§lCross§6PM§r §8>§r"
+  incoming-remote: "{prefix} §7[§b{server}§7] §f{sender} §7-> §eMe§7: §f{message}"
+  outgoing-remote: "{prefix} §7[§b{server}§7] §eYou §7-> §f{target}§7: §f{message}"
+  incoming-local: "{prefix} §f{sender} §7-> §eMe§7: §f{message}"
+  outgoing-local: "{prefix} §eYou §7-> §f{target}§7: §f{message}"
+  usage-msg: "{prefix} §cUsage: /msg <player> <message>"
+  usage-reply: "{prefix} §cUsage: /reply <message>"
+  player-only: "{prefix} §cThis command can only be used in-game."
+  console-disabled: "{prefix} §cConsole messaging is disabled in config.yml."
+  not-configured: "{prefix} §cCross-server messaging is not configured. Ask an admin to set enabled, network.secret, and transport settings."
+  target-not-found: "{prefix} §cThat player is not online on any linked server."
+  no-reply-target: "{prefix} §cNo one has messaged you yet."
+  message-too-long: "{prefix} §cThat message is too long. Max length: {max} characters."
+  cooldown: "{prefix} §cPlease wait before sending another message."
+  send-failed: "{prefix} §cMessage failed: {reason}"
+  reload-complete: "{prefix} §aConfiguration reloaded."

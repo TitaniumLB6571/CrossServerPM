@@ -1,0 +1,74 @@
+# CrossServerPM example: MySQL / MariaDB transport.
+#
+# Best for most public plugin users.
+# Every linked server must use the same MySQL database details.
+# Change only server.id and server.display-name on each server.
+
+enabled: true
+transport: mysql
+
+network:
+  id: "titan-network"
+  secret: "copy-this-same-long-secret-to-every-titan-server"
+  servers:
+    survival: "Titan Survival"
+    skyblock: "Titan Skyblock"
+    factions: "Titan Factions"
+
+server:
+  id: "survival"
+  display-name: "Titan Survival"
+
+mysql:
+  host: "mysql.titanhosting.example"
+  port: 3306
+  database: "titan_crossserverpm"
+  username: "titan_crossserverpm"
+  password: "fake-mysql-password-change-this"
+  table-prefix: "cspm_"
+  timeout-seconds: 3
+
+relay:
+  url: ""
+  access-key: ""
+  timeout-seconds: 3
+
+redis:
+  host: "127.0.0.1"
+  port: 6379
+  username: ""
+  password: ""
+  database: 0
+  key-prefix: "cspm"
+  timeout-seconds: 3
+
+file:
+  path: "crossserverpm-shared"
+
+runtime:
+  poll-interval-seconds: 1
+  heartbeat-interval-seconds: 5
+  stale-presence-seconds: 15
+  message-ttl-seconds: 30
+  max-message-length: 256
+  command-cooldown-seconds: 1
+  allow-console-messaging: false
+  console-name: "Console"
+
+messages:
+  prefix: "[CrossPM]"
+  incoming-remote: "{prefix} [{server}] {sender} -> Me: {message}"
+  outgoing-remote: "{prefix} [{server}] You -> {target}: {message}"
+  incoming-local: "{prefix} {sender} -> Me: {message}"
+  outgoing-local: "{prefix} You -> {target}: {message}"
+  usage-msg: "{prefix} Usage: /msg <player> <message>"
+  usage-reply: "{prefix} Usage: /reply <message>"
+  player-only: "{prefix} This command can only be used in-game."
+  console-disabled: "{prefix} Console messaging is disabled in config.yml."
+  not-configured: "{prefix} Cross-server messaging is not configured."
+  target-not-found: "{prefix} That player is not online on any linked server."
+  no-reply-target: "{prefix} No one has messaged you yet."
+  message-too-long: "{prefix} That message is too long. Max length: {max} characters."
+  cooldown: "{prefix} Please wait before sending another message."
+  send-failed: "{prefix} Message failed: {reason}"
+  reload-complete: "{prefix} Configuration reloaded."

@@ -1,0 +1,22 @@
+# Runtime data
+plugin_data/
+plugins/
+worlds/
+crashdumps/
+server.log
+
+# Build output
+*.phar
+*.zip
+
+# Local/editor files
+.idea/
+.vscode/
+*.log
+*.tmp
+Thumbs.db
+.DS_Store
+
+# Dependencies created locally
+vendor/
+node_modules/

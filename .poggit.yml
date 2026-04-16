@@ -1,0 +1,11 @@
+---
+build-by-default: true
+branches:
+  - main
+projects:
+  CrossServerPM:
+    path: ""
+    icon: "icon.png"
+    lint:
+      phpstan: false
+...

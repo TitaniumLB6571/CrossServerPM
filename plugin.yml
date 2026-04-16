@@ -1,0 +1,39 @@
+name: CrossServerPM
+version: 0.1.0
+main: NorixDevelopment\CrossServerPM\CrossServerPM
+api:
+  - 5.0.0
+authors:
+  - NorixDevelopment
+description: Cross-server private messaging for PocketMine-MP networks.
+license: MIT
+src-namespace-prefix: NorixDevelopment\CrossServerPM
+commands:
+  msg:
+    description: Send a private message to a local or linked remote player.
+    usage: /msg <player> <message>
+    aliases:
+      - tell
+      - whisper
+      - w
+    permission: crossserverpm.msg
+  reply:
+    description: Reply to the last private message conversation.
+    usage: /reply <message>
+    aliases:
+      - r
+    permission: crossserverpm.msg
+  xmsg:
+    description: Manage CrossServerPM.
+    usage: /xmsg help
+    aliases:
+      - cspm
+      - crossserverpm
+    permission: crossserverpm.admin
+permissions:
+  crossserverpm.msg:
+    description: Send and receive cross-server private messages.
+    default: true
+  crossserverpm.admin:
+    description: Manage CrossServerPM settings and status.
+    default: op

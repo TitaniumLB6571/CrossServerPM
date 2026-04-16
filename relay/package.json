@@ -1,0 +1,14 @@
+{
+  "name": "crossserverpm-relay",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Reference HTTP relay for the CrossServerPM PocketMine-MP plugin.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

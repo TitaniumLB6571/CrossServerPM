@@ -1,0 +1,13 @@
+{
+  "name": "norixdevelopment/crossserverpm",
+  "description": "Cross-server private messaging for PocketMine-MP networks.",
+  "type": "project",
+  "require": {
+    "php": "^8.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "NorixDevelopment\\CrossServerPM\\": "src/"
+    }
+  }
+}
