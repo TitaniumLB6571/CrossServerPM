@@ -255,9 +255,6 @@ If `skyblock` is not sending heartbeats, `/xmsg servers` will show it as
 - [ ] Cross-server staff chat with `/staffchat` and `/sc`.
 - [ ] Admin cross-server broadcasts.
 - [ ] Offline mail for players who are not currently online.
-- [ ] Last seen lookup for players across linked servers.
-- [ ] Friend system with cross-server online status.
-- [ ] Vanish integration so hidden players are not advertised in presence.
 - [ ] Public API for other plugins.
 - [ ] Custom PocketMine events for private messages, staff chat, broadcasts, offline mail, and presence updates.
 - [ ] Better transport diagnostics, including last heartbeat, last poll, and recent error details.
